@@ -44,6 +44,25 @@ $$mAP@100 = \frac{1}{Q} \sum{q=1}^{Q} \frac{1}{min(mq, 100)} \sum{k=1}^{min(nq,1
 ### Data Cleaning
 
  - Just remove the very imbalanced classes (less than 4 examples)
- - Use the model from last year as a feature descriptors <!-- What do they mean by descriptors? -->
- <!-- Fine-tuning CNN Image Retrieval with No Human Annotation -->
+ - Use the model from last year as a feature "descriptors"
+ - A descriptor is a vector represented by a generalized-mean pooling layer with Siamese training (more on this later)
+ <!-- Fine-tuning CNN Image Retrieval with No Human Annotation For GeM-->
  - If from within a class there was no agreement, then remove that class as well <!-- Follow up on this -->
+
+### GeM Pooling Layers
+
+ - First Proposed in 2017
+
+$$\mathbf{f}^{(g)}=\left[\mathrm{f}_{1}^{(g)} \ldots \mathrm{f}_{k}^{(g)} \ldots \mathrm{f}_{K}^{(g)}\right]^{\top}, \quad \mathrm{f}_{k}^{(g)}=\left(\frac{1}{\left|\mathcal{X}_{k}\right|} \sum_{x \in \mathcal{X}_{k}} x^{p_{k}}\right)^{\frac{1}{p_{k}}}$$
+ Where $\mathcal{X}_{k}$ is the $k$th kernel of the 3D Image tensor and $p_k$ is the pooling parameter, which can be learned. 
+ $p_k = 1$ is global average pooling and $p_k -> \infty$ is global max pooling.
+ 
+---
+Notes: https://github.com/filipradenovic/cnnimageretrieval-pytorch
+
+## What does this mean?
+
+![GeM Descriptors](img/gem_descriptors.png)
+
+
+# Bibliography
