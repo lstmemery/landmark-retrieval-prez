@@ -9,6 +9,12 @@ output: slidy_presentation
 knitr::opts_chunk$set(echo = FALSE)
 ```
 
+## Goal
+
+ - You will have a rough understand of how image retrieval works.
+
+<!-- Add more here -->
+
 ## Competitions
 
  - Google Landmark Retrieval 2019
@@ -35,19 +41,23 @@ $$GAP = \frac{1}{M}\sum_{i=1}^N P(i) rel(i)$$
 
 $$mAP@100 = \frac{1}{Q} \sum{q=1}^{Q} \frac{1}{min(mq, 100)} \sum{k=1}^{min(nq,100)} Pq(k) relq(k)$$
 
+Note that this isn't differentiable!
+
 ## Award
 
  - 25K each
 
 ## First Place Solution
 
-### Data Cleaning
+ - Yinzheng Gu and Chuanpeng Li of the Video++ AI Lab
+
+### Data Cleaning - Classes
 
  - Just remove the very imbalanced classes (less than 4 examples)
  - Use the model from last year as a feature "descriptors"
- - A descriptor is a vector represented by a generalized-mean pooling layer with Siamese training (more on this later)
- <!-- Fine-tuning CNN Image Retrieval with No Human Annotation For GeM-->
- - If from within a class there was no agreement, then remove that class as well <!-- Follow up on this -->
+ - A descriptor is a vector represented by a generalized-mean pooling layer (see next slide)
+ - Within each class, compare the cosine similarity of each pair
+ - Classes with no pairs that agree (cosine similarity > 0.5) are removed
 
 ### GeM Pooling Layers
 
@@ -64,5 +74,57 @@ Notes: https://github.com/filipradenovic/cnnimageretrieval-pytorch
 
 ![GeM Descriptors](img/gem_descriptors.png)
 
+
+<aside class="notes">
+    Each pair of pictures represents the maximum activations of a different kernel
+</aside>
+
+
+### Data Cleaning - Images
+
+ - Of the images that remain, find the "most agreeable" image (most other images with 0.5 cosine similarity)
+ - Only include that image and the images that agree with it
+ 
+ Before Data Cleaning: 4,132,914 Images, 203,094 Classes
+ After Data Cleaning: 836,964 Images, 112,782 Classes
+
+## Global CNN Models
+
+ - Used a "Combination of Multiple Global Descriptors" Model
+
+![https://raw.githubusercontent.com/naver/cgd/master/figures/architecture.png](img/architecture.png)
+ - Backbone is a ResNet (no max pooling on the 3rd stage)
+ - Each global descriptor is a single kernel
+ - Connect to a fully connected layer and add $l_2$ regularization
+ - Predict ranking loss
+ 
+### Auxilery Classification Loss
+
+ - Only applies to the 1st global descriptor
+ - Just a batch norm and temperature scaled softmax <!-- Follow up on this -->
+
+## Attentional Mapping
+
+ - The proposed model concatenates feature maps from several models together
+ - Each feature map undergoes GeM plus global average and max pooling and sum-pooled convolutional features <!-- Follow up on sum pooling -->
+ - Attention is used to focus the network on the most important features
+ - Attention units act as side channels to determine how strong the signal from a single feature is
+ <!-- Will need a diagram here -->
+
+
+## Whitening
+
+ - Attentuated Unsupervised Whitening
+ <!-- More -->
+ 
+ 
+## Loss Function
+
+ - They actually used two loss functions and summed them together
+ - First construct a tuple of a query image, an image from the same class and five images outside of the class
+
+### Contrastive loss
+
+ - Clone the network, with the same weights
 
 # Bibliography
