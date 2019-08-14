@@ -115,6 +115,7 @@ Notes: https://github.com/filipradenovic/cnnimageretrieval-pytorch
 ## Whitening
 
  - Attentuated Unsupervised Whitening
+ - 
  <!-- More -->
  
  
@@ -122,9 +123,21 @@ Notes: https://github.com/filipradenovic/cnnimageretrieval-pytorch
 
  - They actually used two loss functions and summed them together
  - First construct a tuple of a query image, an image from the same class and five images outside of the class
+ 
+ $$\left(I_{q}, I_{p}, I_{n, 1}, \dots, I_{n, 5}\right)$$
 
 ### Contrastive loss
 
  - Clone the network, with the same weights
+ - Transform the tuple containing the query image and the positive and negative examples into a list of 2-tuples
+ - Compare the 
+ 
+ $$\left(I_{q}, I_{p}\right),\left(I_{q}, I_{n, 1}\right), \ldots,\left(I_{q}, I_{n, 5}\right)$$
+
+$$\mathcal{L}(i, j)=\left\{\begin{array}{ll}{\frac{1}{2}\|\overline{\mathbf{f}}(i)-\overline{\mathbf{f}}(j)\|^{2},} & {\text { if } Y(i, j)=1} \\ {\frac{1}{2}(\max \{0, \tau-\|\overline{\mathbf{f}}(i)-\overline{\mathbf{f}}(j)\|\})^{2},} & {\text { if } Y(i, j)=0}\end{array}\right.$$
+
+### Triplet loss
+
+$$\left(I_{q}, I_{p}, I_{n, 1}\right), \ldots,\left(I_{q}, I_{p}, I_{n, 5}\right)$$
 
 # Bibliography
