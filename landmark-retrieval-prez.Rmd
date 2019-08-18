@@ -122,6 +122,7 @@ Notes: https://github.com/filipradenovic/cnnimageretrieval-pytorch
 ## Global CNN Models
 
  - Used a "Combination of Multiple Global Descriptors" Model
+ - Global descriptions are rough-grain characteristics of a whole image 
 
 ![https://raw.githubusercontent.com/naver/cgd/master/figures/architecture.png](img/architecture.png)
  - Backbone is a ResNet (no max pooling on the 3rd stage)
@@ -264,9 +265,43 @@ https://github.com/harveyslash/Facial-Similarity-with-Siamese-Networks-in-Pytorc
 
 ## Local CNN Model
 
+ - Local descriptors describe a small patch of an image with fine detail
  - After a first pass with the "global" network, a local network attempts to re-rank the top 10 candidates
  - Uses a Detect-to-Retrieve (D2R) network, building on a Deep Local Features architecture (DELF)
  
 ## Deep Local Features
+
+ - DELF uses attention in a similar way to the global model
+ - DELF learns keypoints that are relevant only to the class of object
+ - These keypoints tend to be invariant to pose and viewpoint
+ 
+ ![](./img/delf_query.png)
+ 
+## Detect-to-Retrieve
+
+ - Combines DELF with Aggregated Selective Match Kernels
+ - Network simulatenously proposes regions of interest and salient image features
+ - A Faster-RCNN backbone is used for region proposal
+
+![](./img/d2r.png)
+
+<!-- Not entirely sure about Aggregated Selective Match Kernels -->
+
+## At Test time: Step 1 Global Search
+
+ - Using only the global model, compute the similarity between ALL test and train images
+ - Keep the top 10 closet neighbours for each test image
+ - A soft voting scheme of the top 5 images determines the class
+
+## Step 2: Local Search
+
+ - Run the D2R algorithm on the previous identified top 10 candidates
+ - Vote based on this
+ 
+## Step 3: Re-Ranking (Team JL's Secret Sauce)
+ - All this work and they haven't dealt with distractors
+ - Intended to separate real landmarks from distractors
+ 
+ 
 
 # Bibliography
