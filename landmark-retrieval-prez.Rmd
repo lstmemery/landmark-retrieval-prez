@@ -141,6 +141,40 @@ Notes: https://github.com/filipradenovic/cnnimageretrieval-pytorch
  - Attention is used to focus the network on the most important features
  - Attention units act as side channels to determine how strong the signal from a single feature is
  <!-- Will need a diagram here -->
+ 
+## Introduction to Attention
+
+ - Multiply the activations of a layer by learned weights and softmax the results
+ - As the network is trained, the learned weights will tend to focus on the most salient features of an image
+
+![https://arxiv.org/pdf/1612.06321.pdf](./img/delf-feature-selection.png)
+
+<aside class="notes">
+	On the left is the original image. The two photos in the image are activations of networks without attention.
+	The photo on the right side is using attention
+</aside>
+
+## Attention Code
+
+<!-- https://pytorch-nlp-tutorial-ny2018.readthedocs.io/en/latest/day2/patterns/attention.html -->
+
+```python
+class Attention(nn.Module):
+    def __init__(self, attention_size):
+        super(Attention, self).__init__()
+        self.attention = new_parameter(attention_size, 1)
+
+    def forward(self, x_in):
+        # after this, we have (batch, dim1) with a diff weight per each cell
+        attention_score = torch.matmul(x_in, self.attention).squeeze()
+        attention_score = F.softmax(attention_score).view(x_in.size(0), x_in.size(1), 1)
+        scored_x = x_in * attention_score
+
+        # now, sum across dim 1 to get the expected feature vector
+        condensed_x = torch.sum(scored_x, dim=1)
+
+        return condensed_x
+```
 
 
 ## Whitening
@@ -222,7 +256,6 @@ class ContrastiveLoss(torch.nn.Module):
         )
 
         return loss_contrastive
-
 ```
 
 
@@ -230,5 +263,10 @@ https://github.com/harveyslash/Facial-Similarity-with-Siamese-Networks-in-Pytorc
 
 
 ## Local CNN Model
+
+ - After a first pass with the "global" network, a local network attempts to re-rank the top 10 candidates
+ - Uses a Detect-to-Retrieve (D2R) network, building on a Deep Local Features architecture (DELF)
+ 
+## Deep Local Features
 
 # Bibliography
