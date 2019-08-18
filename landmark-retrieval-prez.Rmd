@@ -11,6 +11,7 @@ knitr::opts_chunk$set(echo = FALSE)
 
 ## Goal
 
+
  - You will have a rough understand of how image retrieval works.
 
 <!-- Add more here -->
@@ -22,7 +23,7 @@ knitr::opts_chunk$set(echo = FALSE)
  
 ## Data
 
- - Images in Training 4,132,914
+ - Images in Training: 4,132,914 (0.5 TB)
  - 203,094 Classes (Landmarks)
  - 117,577 test images
  
@@ -31,25 +32,51 @@ Not very well curated
 There are also distractor images
 <!-- Follow up on this. -->
 
-## Images
+## Intro to CNNs
 
-![](img/samples/goat.jpg)
+## Some images are distractors
 
-## Evaluation
+![](./img/goat.jpg)
+
+## Images are different sizes
+
+![](./img/tiny.jpg)
+
+## Images have different lighting conditions
+
+
+![](./img/nighttime.jpg)
+
+
+## Some images are orientated the wrong way
+
+![](./img/wrong-direction.jpg)
+
+## Retrieval Evaluation
+
+ - Mean Average Precision at 100 
+ - The model gets 100 chances to retrieval the proper class
+ - Reward is $\frac{1}{k}$ where $k$ is the rank of the correct class
+ - Take the average of all queries
+
+## Recognition Evaluation
 
  - Google Landmark Recognition: Global Average Precision
 
 $$GAP = \frac{1}{M}\sum_{i=1}^N P(i) rel(i)$$
+ - $M$ is number of query images with landmarks
+ - $N$ total number of predictions across all queries
+ - $P(i)$ Precision at rank $i$
+ - $rel(i)$ an indicator function if the prediction is correct
 
- - Google Landmark Retrieval: Mean Average Precision at 100 
+<!-- How is relevance defined? -->
 
-$$mAP@100 = \frac{1}{Q} \sum{q=1}^{Q} \frac{1}{min(mq, 100)} \sum{k=1}^{min(nq,100)} Pq(k) relq(k)$$
 
-Note that this isn't differentiable!
 
-## Award
+## Competition Info
 
- - 25K each
+ - Reward: $25000 for each competition
+ - 
 
 ## First Place Solution
 
@@ -143,8 +170,65 @@ $$\mathcal{L}(i, j)=\left\{\begin{array}{ll}{\frac{1}{2}\|\overline{\mathbf{f}}(
 
 ### Triplet loss
 
+ - 3-tuples instead of 2-tuples
+ - Suggested to be a smoother function
+
 $$\left(I_{q}, I_{p}, I_{n, 1}\right), \ldots,\left(I_{q}, I_{p}, I_{n, 5}\right)$$
 
- - 
+$$\mathcal{L}(i)=\sum_{i=1}^{N}\left[\left\|f_{i}^{q}-f_{i}^{p}\right\|^{2}-\left\|f_{i}^{q}-f_{i}^{n}\right\|^{2}+\alpha\right]_{+}$$
+
+ - Triplet loss is very similar to contrastive loss. I don't know why the JL decided to use both losses
+
+## What does a Siamese network look like?
+
+![https://hackernoon.com/one-shot-learning-with-siamese-networks-in-pytorch-8ddaab10340e](./img/siamese-networks.jpeg)
+
+## Siamese Network Code
+
+```python
+class SiameseNetwork(nn.Module):
+    def __init__(self):
+        super(SiameseNetwork, self).__init__()
+        self.cnn1 = nn.Sequential(...)
+
+        self.fc1 = nn.Sequential(...)
+
+    def forward_once(self, x):
+        output = self.cnn1(x)
+        output = output.view(output.size()[0], -1)
+        output = self.fc1(output)
+        return output
+
+    def forward(self, input1, input2):
+        output1 = self.forward_once(input1)
+        output2 = self.forward_once(input2)
+        return output1, output2
+
+```
+
+## Contrastive Loss
+
+```python
+class ContrastiveLoss(torch.nn.Module):
+    def __init__(self, margin=2.0):
+        super(ContrastiveLoss, self).__init__()
+        self.margin = margin
+
+    def forward(self, output1, output2, label):
+        euclidean_distance = F.pairwise_distance(output1, output2, keepdim = True)
+        loss_contrastive = torch.mean(
+            (1-label) * torch.pow(euclidean_distance, 2) + \
+            (label) * torch.pow(torch.clamp(self.margin - euclidean_distance, min=0.0), 2)
+        )
+
+        return loss_contrastive
+
+```
+
+
+https://github.com/harveyslash/Facial-Similarity-with-Siamese-Networks-in-Pytorch/blob/master/Siamese-networks-medium.ipynb
+
+
+## Local CNN Model
 
 # Bibliography
