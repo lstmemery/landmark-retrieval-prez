@@ -9,18 +9,18 @@ output: revealjs::revealjs_presentation
 knitr::opts_chunk$set(echo = FALSE)
 ```
 
-## Goal
-
-
- - You will have a rough understand of how image retrieval works.
-
-<!-- Add more here -->
-
 ## Competitions
 
  - Google Landmark Retrieval 2019
  - Google Landmark Recognition 2019
- 
+
+## Overview
+
+ - You will roughly understand what's going here:
+
+![](./img/overview.png)
+
+
 ## Data
 
  - Images in Training: 4,132,914 (0.5 TB)
@@ -29,8 +29,7 @@ knitr::opts_chunk$set(echo = FALSE)
  
 Not very well curated
 
-There are also distractor images
-<!-- Follow up on this. -->
+There are also distractor images (photos of nothing)
 
 ## Intro to CNNs
 
@@ -122,14 +121,29 @@ Notes: https://github.com/filipradenovic/cnnimageretrieval-pytorch
 ## Global CNN Models
 
  - Used a "Combination of Multiple Global Descriptors" Model
- - Global descriptions are rough-grain characteristics of a whole image 
+ - Global descriptors are rough-grain characteristics of a whole image 
 
 ![https://raw.githubusercontent.com/naver/cgd/master/figures/architecture.png](img/architecture.png)
- - Backbone is a ResNet (no max pooling on the 3rd stage)
  - Each global descriptor is a single kernel
  - Connect to a fully connected layer and add $l_2$ regularization
  - Predict ranking loss
- 
+
+## Global CNN Model Backbones
+ - In the original paper, a ResNet is used as a descriptor extractor
+ - Team JL used seven models as backbones and ensembled them
+ 1. ResNet-101
+ 2. ResNeXt-101
+ 3. SE-ResNet-101
+ 4. SE-ResNeXt-101
+ 5. SENet-154
+ 6. Deep Image Retrieval (DIR)
+ 7. Previous 6 + Attentuated Unsupervised Whitening (AUW)
+
+## Attentuated Unsupervised Whitening
+
+ - Similar to PCA 
+ - 
+
 ### Auxilery Classification Loss
 
  - Only applies to the 1st global descriptor
@@ -176,14 +190,6 @@ class Attention(nn.Module):
 
         return condensed_x
 ```
-
-
-## Whitening
-
- - Attentuated Unsupervised Whitening
- - 
- <!-- More -->
- 
  
 ## Loss Function
 
@@ -299,9 +305,14 @@ https://github.com/harveyslash/Facial-Similarity-with-Siamese-Networks-in-Pytorc
  - Vote based on this
  
 ## Step 3: Re-Ranking (Team JL's Secret Sauce)
- - All this work and they haven't dealt with distractors
- - Intended to separate real landmarks from distractors
+ - All this work and they haven't dealt with distractors!
+ - Compare the Rank-1 image with the the top 20000 predictions using the D2R descriptors
+ - Append any highly similar images to right behind rank-1, with slightly less confidence than the rank-1 image but more than rank-2
+ - Do this the previous Rank-2 image as well
  
- 
+## Why would re-ranking work
+ - They believe that they're rank-1 image was very often right
+ - They also believe that they were getting most of images in the proper class within the first 20000 photos
+ - The distractors are diluting their score by being middle-ranked
 
 # Bibliography
