@@ -130,7 +130,9 @@ $$GAP = \frac{1}{M}\sum_{i=1}^N P(i) rel(i)$$
 $$\mathbf{f}^{(g)}=\left[\mathrm{f}_{1}^{(g)} \ldots \mathrm{f}_{k}^{(g)} \ldots \mathrm{f}_{K}^{(g)}\right]^{\top}, \quad \mathrm{f}_{k}^{(g)}=\left(\frac{1}{\left|\mathcal{X}_{k}\right|} \sum_{x \in \mathcal{X}_{k}} x^{p_{k}}\right)^{\frac{1}{p_{k}}}$$
  Where $\mathcal{X}_{k}$ is the $k$th kernel of the 3D Image tensor and $p_k$ is the pooling parameter, which can be learned. 
  $p_k = 1$ is global average pooling and $p_k -> \infty$ is global max pooling.
- 
+
+![](./img/descriptors.png)
+
 <aside class="notes">
 Notes: https://github.com/filipradenovic/cnnimageretrieval-pytorch
 </aside>
@@ -185,48 +187,6 @@ Notes: https://github.com/filipradenovic/cnnimageretrieval-pytorch
  - Useful in semi-supervised or weakly supervised situations
  
 ![https://raw.githubusercontent.com/naver/cgd/master/figures/architecture.png](img/architecture.png)
-
-## Attentional Mapping
-
- - The proposed model concatenates feature maps from several models together
- - Each feature map undergoes GeM plus global average and max pooling and sum-pooled convolutional features <!-- Follow up on sum pooling -->
- - Attention is used to focus the network on the most important features
- - Attention units act as side channels to determine how strong the signal from a single feature is
- <!-- Will need a diagram here -->
- 
-## Introduction to Attention
-
- - Multiply the activations of a layer by learned weights and softmax the results
- - As the network is trained, the learned weights will tend to focus on the most salient features of an image
-
-![https://arxiv.org/pdf/1612.06321.pdf](./img/delf-feature-selection.png)
-
-<aside class="notes">
-	On the left is the original image. The two photos in the image are activations of networks without attention.
-	The photo on the right side is using attention
-</aside>
-
-## Attention Code
-
-<!-- https://pytorch-nlp-tutorial-ny2018.readthedocs.io/en/latest/day2/patterns/attention.html -->
-
-```python
-class Attention(nn.Module):
-    def __init__(self, attention_size):
-        super(Attention, self).__init__()
-        self.attention = new_parameter(attention_size, 1)
-
-    def forward(self, x_in):
-        # after this, we have (batch, dim1) with a diff weight per each cell
-        attention_score = torch.matmul(x_in, self.attention).squeeze()
-        attention_score = F.softmax(attention_score).view(x_in.size(0), x_in.size(1), 1)
-        scored_x = x_in * attention_score
-
-        # now, sum across dim 1 to get the expected feature vector
-        condensed_x = torch.sum(scored_x, dim=1)
-
-        return condensed_x
-```
  
 ## Loss Function
 
@@ -235,7 +195,7 @@ class Attention(nn.Module):
  
  $$\left(I_{q}, I_{p}, I_{n, 1}, \dots, I_{n, 5}\right)$$
 
-### Contrastive loss
+## Contrastive loss
 
  - Clone the network, with the same weights
  - Transform the tuple containing the query image and the positive and negative examples into a list of 2-tuples
@@ -246,7 +206,9 @@ class Attention(nn.Module):
 
 $$\mathcal{L}(i, j)=\left\{\begin{array}{ll}{\frac{1}{2}\|\overline{\mathbf{f}}(i)-\overline{\mathbf{f}}(j)\|^{2},} & {\text { if } Y(i, j)=1} \\ {\frac{1}{2}(\max \{0, \tau-\|\overline{\mathbf{f}}(i)-\overline{\mathbf{f}}(j)\|\})^{2},} & {\text { if } Y(i, j)=0}\end{array}\right.$$
 
-### Triplet loss
+![https://github.com/filipradenovic/cnnimageretrieval-pytorch](./img/contrastive_loss.png)
+
+## Triplet loss
 
  - 3-tuples instead of 2-tuples
  - Suggested to be a smoother function
@@ -311,7 +273,49 @@ https://github.com/harveyslash/Facial-Similarity-with-Siamese-Networks-in-Pytorc
  - Local descriptors describe a small patch of an image with fine detail
  - After a first pass with the "global" network, a local network attempts to re-rank the top 10 candidates
  - Uses a Detect-to-Retrieve (D2R) network, building on a Deep Local Features architecture (DELF)
+
+## Attentional Mapping
+
+ - Self-Attention in CNNs was first adopted in GANs
+ - Helps model the relationship between pixels far away from each other (global relationships)
+ - Handles detail better than traditional CNN
+
+![https://lilianweng.github.io/lil-log/2018/06/24/attention-attention.html](./img/conv-vs-self-attention.png)
  
+## Introduction to Attention
+
+ - Multiply the activations of a layer by learned weights and softmax the results
+ - As the network is trained, the learned weights will tend to focus on the most salient features of an image
+
+![https://arxiv.org/pdf/1612.06321.pdf](./img/delf-feature-selection.png)
+
+<aside class="notes">
+	On the left is the original image. The two photos in the image are activations of networks without attention.
+	The photo on the right side is using attention
+</aside>
+
+## Attention Code
+
+<!-- https://pytorch-nlp-tutorial-ny2018.readthedocs.io/en/latest/day2/patterns/attention.html -->
+
+```python
+class Attention(nn.Module):
+    def __init__(self, attention_size):
+        super(Attention, self).__init__()
+        self.attention = new_parameter(attention_size, 1)
+
+    def forward(self, x_in):
+        # after this, we have (batch, dim1) with a diff weight per each cell
+        attention_score = torch.matmul(x_in, self.attention).squeeze()
+        attention_score = F.softmax(attention_score).view(x_in.size(0), x_in.size(1), 1)
+        scored_x = x_in * attention_score
+
+        # now, sum across dim 1 to get the expected feature vector
+        condensed_x = torch.sum(scored_x, dim=1)
+
+        return condensed_x
+```
+
 ## Deep Local Features
 
  - DELF uses attention in a similar way to the global model
@@ -351,5 +355,9 @@ https://github.com/harveyslash/Facial-Similarity-with-Siamese-Networks-in-Pytorc
  - They believe that they're rank-1 image was very often right
  - They also believe that they were getting most of images in the proper class within the first 20000 photos
  - The distractors are diluting their score by being middle-ranked
+ 
+## Results
+
+
 
 # Bibliography
