@@ -5,6 +5,7 @@ date: "08/08/2019"
 output: 
   revealjs::revealjs_presentation:
     theme: "night"
+    highlight: "zenburn"
     css: style.css
 ---
 
@@ -286,7 +287,7 @@ $$\mathcal{L}(i)=\sum_{i=1}^{N}\left[\left\|f_{i}^{q}-f_{i}^{p}\right\|^{2}-\lef
 
 ## What does a Siamese network look like?
 
-![https://hackernoon.com/one-shot-learning-with-siamese-networks-in-pytorch-8ddaab10340e](./img/siamese-networks.jpeg)
+<img src="./img/siamese-networks.jpeg" alt="https://hackernoon.com/one-shot-learning-with-siamese-networks-in-pytorch-8ddaab10340e" height="55%" width="55%">
 
 ## Siamese Network Code
 
@@ -322,8 +323,10 @@ class ContrastiveLoss(torch.nn.Module):
     def forward(self, output1, output2, label):
         euclidean_distance = F.pairwise_distance(output1, output2, keepdim = True)
         loss_contrastive = torch.mean(
-            (1-label) * torch.pow(euclidean_distance, 2) + \
-            (label) * torch.pow(torch.clamp(self.margin - euclidean_distance, min=0.0), 2)
+            (1-label) * torch.pow(euclidean_distance, 2) +
+            (label) * torch.pow(
+                torch.clamp(self.margin - euclidean_distance, min=0.0), 
+            2)
         )
 
         return loss_contrastive
@@ -339,7 +342,7 @@ https://github.com/harveyslash/Facial-Similarity-with-Siamese-Networks-in-Pytorc
 <div id="left">
  - Local descriptors describe a small patch of an image with fine detail
  - After a first pass with the "global" network, a local network attempts to re-rank the top 10 candidates
- - Uses a Detect-to-Retrieve (D2R) network, building on a Deep Local Features architecture (DELF)
+ - Uses a **Detect-to-Retrieve** (D2R) network, building on a Deep Local Features architecture (DELF)
 </div>
 
 <div id="right">
@@ -391,32 +394,34 @@ https://github.com/harveyslash/Facial-Similarity-with-Siamese-Networks-in-Pytorc
 
 
 <div id="right">
-![](./img/step1.png)
+![](./img/step2.png)
 </div> 
 
 ## Step 3: Re-Ranking (Team JL's Secret Sauce)
 <div id="left">
- - All this work and they haven't dealt with distractors!
- - Compare the Rank-1 image with the the top 20000 predictions using the D2R descriptors
+ - Compare the Rank-1 image with the the top 20000 predictions using the D2R
  - Append any highly similar images to right behind rank-1, with slightly less confidence than the rank-1 image but more than rank-2
  - Do this the previous Rank-2 image as well
 </div>
 
 
 <div id="right">
-![](./img/step1.png)
+![](./img/reranking.png)
 </div>
 
+<aside class="notes">
+- All this work and they haven't dealt with distractors!
+</aside>
+
 ## Why would re-ranking work
-<div id="left">
+
  - They believe that they're rank-1 image was very often right
  - They also believe that they were getting most of images in the proper class within the first 20000 photos
  - The distractors are diluting their score by being middle-ranked
-</div>
 
 
 <div id="right">
-![](./img/step1.png)
+![](./img/step3.png)
 </div>
 
 ## Backbone Results
