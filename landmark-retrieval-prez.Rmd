@@ -15,8 +15,8 @@ knitr::opts_chunk$set(echo = FALSE)
 ## Competitions
 
 <div id="left">
- - Google Landmark Retrieval 2019: Given an image, can you find all of the same landmarks in a dataset?
- - Google Landmark Recognition 2019: Label famous (and not-so-famous) landmarks in images
+ - **Google Landmark Retrieval 2019:** Given an image, can you find all of the same landmarks in a dataset?
+ - **Google Landmark Recognition 2019:** Label famous (and not-so-famous) landmarks in images
 </div>
 
 <div id="right">
@@ -74,7 +74,7 @@ knitr::opts_chunk$set(echo = FALSE)
 </div>
 
 
-## Some images are distractors
+## Distractors
 
 ![](./img/goat.jpg)
 
@@ -104,18 +104,14 @@ knitr::opts_chunk$set(echo = FALSE)
 
 $$GAP = \frac{1}{M}\sum_{i=1}^N P(i) rel(i)$$
 
-## Average Precision Illustrated
+## Mean Average Precision Illustrated
 
 ![https://es.slideshare.net/JosRamnRosViqueira/information-retrieval-evaluation-64158263](./img/mean_average_precision.jpg)
-
-## First Place Solution
-
- - Yinzheng Gu and Chuanpeng Li of the Video++ AI Lab
 
 ## Data Cleaning - Classes
 
  - Just remove the very imbalanced classes (less than 4 examples)
- - Use the model from last year extract image descriptors
+ - Use the model from last year extract **image descriptors**
  - Within each class, compare the cosine similarity of each pair
  - Classes with no pairs that agree (cosine similarity > 0.5) are removed
 
@@ -125,21 +121,29 @@ $$GAP = \frac{1}{M}\sum_{i=1}^N P(i) rel(i)$$
 
 ## Data Cleaning - Images
 
- - Of the images that remain, find the "most agreeable" image (most other images with 0.5 cosine similarity)
+<div id="left">
+ - Of the images that remain, find the "most agreeable" image (most other images with 0.5 cosine similarity) in each class
  - Only include that image and the images that agree with it
  
- - Before Data Cleaning: 4,132,914 Images, 203,094 Classes
- - After Data Cleaning: 836,964 Images, 112,782 Classes
+ - **Before Data Cleaning:** 4,132,914 Images, 203,094 Classes
+ - **After Data Cleaning:** 836,964 Images, 112,782 Classes
+</div>
+
+<div id="right">
+![](./img/centrality-sample.png)
+</div>
+
+## How Do We Find the Distance between Images?
 
 ## GeM Pooling Layers
 
  - First Proposed in 2017
 
+![](./img/descriptors.png)
+
 $$\mathbf{f}^{(g)}=\left[\mathrm{f}_{1}^{(g)} \ldots \mathrm{f}_{k}^{(g)} \ldots \mathrm{f}_{K}^{(g)}\right]^{\top}, \quad \mathrm{f}_{k}^{(g)}=\left(\frac{1}{\left|\mathcal{X}_{k}\right|} \sum_{x \in \mathcal{X}_{k}} x^{p_{k}}\right)^{\frac{1}{p_{k}}}$$
  Where $\mathcal{X}_{k}$ is the $k$th kernel of the 3D Image tensor and $p_k$ is the pooling parameter, which can be learned. 
  $p_k = 1$ is global average pooling and $p_k -> \infty$ is global max pooling.
-
-![](./img/descriptors.png)
 
 <aside class="notes">
 Notes: https://github.com/filipradenovic/cnnimageretrieval-pytorch
@@ -189,7 +193,9 @@ class Attention(nn.Module):
     def forward(self, x_in):
         # after this, we have (batch, dim1) with a diff weight per each cell
         attention_score = torch.matmul(x_in, self.attention).squeeze()
-        attention_score = F.softmax(attention_score).view(x_in.size(0), x_in.size(1), 1)
+        attention_score = F.softmax(attention_score).view(
+          x_in.size(0), x_in.size(1), 1
+        )
         scored_x = x_in * attention_score
 
         # now, sum across dim 1 to get the expected feature vector
@@ -201,17 +207,22 @@ class Attention(nn.Module):
 ## Global CNN Models
 
  - Used a "Combination of Multiple Global Descriptors" Model
- - Global descriptors are rough-grain characteristics of a whole image 
 
 ![https://raw.githubusercontent.com/naver/cgd/master/figures/architecture.png](img/architecture.png)
+
+<aside class="notes">
+- Global descriptors are rough-grain characteristics of a whole image 
  - Each global descriptor is a single kernel
  - Connect to a fully connected layer and add $l_2$ regularization
  - Predict ranking loss
+</aside>
+
 
 ## Global CNN Model Backbones
 
 Team JL used seven models as backbones and ensembled them
  
+<div id="left">
  1. ResNet-101
  2. ResNeXt-101
  3. SE-ResNet-101
@@ -219,8 +230,16 @@ Team JL used seven models as backbones and ensembled them
  5. SENet-154
  6. Deep Image Retrieval (DIR)
  7. Previous 6 + Attentuated Unsupervised Whitening (AUW)
+</div>
+
+<div id="right">
+![](./img/se-resnet.png)
+</div>
+ 
  
 <aside class="notes">
+ SE stands for Squeeze-and-Excitation. A concept similar to attention
+ Train weights to determine how much much weight to put each convolutional kernel
  AUW is like PCA for descriptors
 </aside>
 
@@ -230,18 +249,18 @@ Team JL used seven models as backbones and ensembled them
  - Apply batchnorm and then a temperature-scaled softmax (for smoothing) 
  - Useful in semi-supervised or weakly supervised situations
  
-![https://raw.githubusercontent.com/naver/cgd/master/figures/architecture.png](img/architecture.png)
+![https://raw.githubusercontent.com/naver/cgd/master/figures/architecture.png](img/auxiliary_classification.png)
  
 ## Loss Function
 
  - They actually used two loss functions and summed them together
  - First construct a tuple of a query image, an image from the same class and five images outside of the class
+ - They rely on cloned networks with the same weights (known as Siamese networks)
  
  $$\left(I_{q}, I_{p}, I_{n, 1}, \dots, I_{n, 5}\right)$$
 
 ## Contrastive loss
 
- - Clone the network, with the same weights
  - Transform the tuple containing the query image and the positive and negative examples into a list of 2-tuples
  - If the images are in the same class, the loss the half the norm of the difference of two descriptors
  - Otherwise, subtract the difference of the two descriptors from a margin hyperparameter
@@ -365,5 +384,9 @@ https://github.com/harveyslash/Facial-Similarity-with-Siamese-Networks-in-Pytorc
 ## Process Results
 
 ![](./img/results.png)
+
+## Overview Again
+
+![](./img/overview.png)
 
 # Bibliography
