@@ -11,8 +11,14 @@ knitr::opts_chunk$set(echo = FALSE)
 
 ## Competitions
 
+<div id="left">
  - Google Landmark Retrieval 2019
  - Google Landmark Recognition 2019
+</div>
+
+<div id="right">
+ ![](./img/nighttime.jpg)
+</div>
 
 ## Overview
 
@@ -31,7 +37,34 @@ Not very well curated
 
 There are also distractor images (photos of nothing)
 
-## Intro to CNNs
+
+## What are Neural Nets? (Please, No Math)
+
+<div id="left">
+  - They are large arrays of numbers that get multiplied by one another
+  - In between those multiplications, we apply a special function called an **activation function**
+  - Adjust these numbers using the **chain rule**
+</div>
+
+<div id="right">
+![https://hackernoon.com/artificial-neural-network-a843ff870338](./img/neural-net-diagram.png)
+</div>
+<aside class="notes">A hidden layer is just a layer that where the input and outputs aren't directly observed</aside>
+<aside class="notes">The more hidden layers, the higher the capacity of the neural network</aside>
+<aside class="notes">You can brush up on the math you need with this paper: https://arxiv.org/abs/1802.01528</aside>
+
+## What are Convolutional Neural Networks (CNNs)?
+
+<div id="left">
+  - CNNs are neural nets that work well for images
+  - Basic features of an image (edges etc.) are useful to know about anywhere in the image
+  - This allows the network to **share weights** between different areas of an image
+</div>
+
+<div id="right">
+  <img src="./img/convolution.gif" alt="https://hackernoon.com/visualizing-parts-of-convolutional-neural-networks-using-keras-and-cats-5cc01b214e59">
+</div>
+<aside class="notes">Other applications: Natural language processing, Video</aside>
 
 ## Some images are distractors
 
