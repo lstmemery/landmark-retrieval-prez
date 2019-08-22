@@ -94,22 +94,19 @@ knitr::opts_chunk$set(echo = FALSE)
 
 ## Evaluation
 
-
-<div id="left">
- - Landmark Recognition: Global Average Precision
+ - Landmark Recognition: Global Average Precision (MAP@1)
  - Landmark Retrieval: Mean Average Precision at 100 
-
-$$GAP = \frac{1}{M}\sum_{i=1}^N P(i) rel(i)$$
  - $M$ is number of query images with landmarks
  - $N$ total number of predictions across all queries
  - $P(i)$ Precision at rank $i$
  - $rel(i)$ an indicator function if the prediction is correct
 
-</div>
 
-<div id="right">
+$$GAP = \frac{1}{M}\sum_{i=1}^N P(i) rel(i)$$
+
+## Average Precision Illustrated
+
 ![https://es.slideshare.net/JosRamnRosViqueira/information-retrieval-evaluation-64158263](./img/mean_average_precision.jpg)
-</div>
 
 ## First Place Solution
 
@@ -119,9 +116,20 @@ $$GAP = \frac{1}{M}\sum_{i=1}^N P(i) rel(i)$$
 
  - Just remove the very imbalanced classes (less than 4 examples)
  - Use the model from last year extract image descriptors
- - A descriptor is a vector represented by a generalized-mean pooling layer (see next slide)
  - Within each class, compare the cosine similarity of each pair
  - Classes with no pairs that agree (cosine similarity > 0.5) are removed
+
+<aside class="notes">
+- A descriptor is a vector represented by a generalized-mean pooling layer (see next slide)
+</aside>
+
+## Data Cleaning - Images
+
+ - Of the images that remain, find the "most agreeable" image (most other images with 0.5 cosine similarity)
+ - Only include that image and the images that agree with it
+ 
+ - Before Data Cleaning: 4,132,914 Images, 203,094 Classes
+ - After Data Cleaning: 836,964 Images, 112,782 Classes
 
 ## GeM Pooling Layers
 
@@ -138,6 +146,8 @@ Notes: https://github.com/filipradenovic/cnnimageretrieval-pytorch
 </aside>
 ## What does this mean?
 
+ - These GeM activations are combined with self-attention to identify salient keypoints 
+
 ![GeM Descriptors](img/gem_descriptors.png)
 
 
@@ -146,13 +156,47 @@ Notes: https://github.com/filipradenovic/cnnimageretrieval-pytorch
 </aside>
 
 
-### Data Cleaning - Images
+## Attentional Mapping
 
- - Of the images that remain, find the "most agreeable" image (most other images with 0.5 cosine similarity)
- - Only include that image and the images that agree with it
+ - Self-Attention in CNNs was first adopted in GANs
+ - Helps model the relationship between pixels far away from each other (global relationships)
+ - Handles detail better than traditional CNN
+
+![https://lilianweng.github.io/lil-log/2018/06/24/attention-attention.html](./img/conv-vs-self-attention.png)
  
- Before Data Cleaning: 4,132,914 Images, 203,094 Classes
- After Data Cleaning: 836,964 Images, 112,782 Classes
+## Introduction to Attention
+
+ - Multiply the activations of a layer by learned weights and softmax the results
+ - As the network is trained, the learned weights will tend to focus on the most salient features of an image
+
+![https://arxiv.org/pdf/1612.06321.pdf](./img/delf-feature-selection.png)
+
+<aside class="notes">
+	On the left is the original image. The two photos in the image are activations of networks without attention.
+	The photo on the right side is using attention
+</aside>
+
+## Attention Code
+
+<!-- https://pytorch-nlp-tutorial-ny2018.readthedocs.io/en/latest/day2/patterns/attention.html -->
+
+```python
+class Attention(nn.Module):
+    def __init__(self, attention_size):
+        super(Attention, self).__init__()
+        self.attention = new_parameter(attention_size, 1)
+
+    def forward(self, x_in):
+        # after this, we have (batch, dim1) with a diff weight per each cell
+        attention_score = torch.matmul(x_in, self.attention).squeeze()
+        attention_score = F.softmax(attention_score).view(x_in.size(0), x_in.size(1), 1)
+        scored_x = x_in * attention_score
+
+        # now, sum across dim 1 to get the expected feature vector
+        condensed_x = torch.sum(scored_x, dim=1)
+
+        return condensed_x
+```
 
 ## Global CNN Models
 
@@ -166,8 +210,8 @@ Notes: https://github.com/filipradenovic/cnnimageretrieval-pytorch
 
 ## Global CNN Model Backbones
 
- - In the original paper, a ResNet is used as a descriptor extractor
- - Team JL used seven models as backbones and ensembled them
+Team JL used seven models as backbones and ensembled them
+ 
  1. ResNet-101
  2. ResNeXt-101
  3. SE-ResNet-101
@@ -274,47 +318,6 @@ https://github.com/harveyslash/Facial-Similarity-with-Siamese-Networks-in-Pytorc
  - After a first pass with the "global" network, a local network attempts to re-rank the top 10 candidates
  - Uses a Detect-to-Retrieve (D2R) network, building on a Deep Local Features architecture (DELF)
 
-## Attentional Mapping
-
- - Self-Attention in CNNs was first adopted in GANs
- - Helps model the relationship between pixels far away from each other (global relationships)
- - Handles detail better than traditional CNN
-
-![https://lilianweng.github.io/lil-log/2018/06/24/attention-attention.html](./img/conv-vs-self-attention.png)
- 
-## Introduction to Attention
-
- - Multiply the activations of a layer by learned weights and softmax the results
- - As the network is trained, the learned weights will tend to focus on the most salient features of an image
-
-![https://arxiv.org/pdf/1612.06321.pdf](./img/delf-feature-selection.png)
-
-<aside class="notes">
-	On the left is the original image. The two photos in the image are activations of networks without attention.
-	The photo on the right side is using attention
-</aside>
-
-## Attention Code
-
-<!-- https://pytorch-nlp-tutorial-ny2018.readthedocs.io/en/latest/day2/patterns/attention.html -->
-
-```python
-class Attention(nn.Module):
-    def __init__(self, attention_size):
-        super(Attention, self).__init__()
-        self.attention = new_parameter(attention_size, 1)
-
-    def forward(self, x_in):
-        # after this, we have (batch, dim1) with a diff weight per each cell
-        attention_score = torch.matmul(x_in, self.attention).squeeze()
-        attention_score = F.softmax(attention_score).view(x_in.size(0), x_in.size(1), 1)
-        scored_x = x_in * attention_score
-
-        # now, sum across dim 1 to get the expected feature vector
-        condensed_x = torch.sum(scored_x, dim=1)
-
-        return condensed_x
-```
 
 ## Deep Local Features
 
@@ -332,7 +335,6 @@ class Attention(nn.Module):
 
 ![](./img/d2r.png)
 
-<!-- Not entirely sure about Aggregated Selective Match Kernels -->
 
 ## At Test time: Step 1 Global Search
 
@@ -356,8 +358,12 @@ class Attention(nn.Module):
  - They also believe that they were getting most of images in the proper class within the first 20000 photos
  - The distractors are diluting their score by being middle-ranked
  
-## Results
+## Backbone Results
 
+![](./img/backbone_results.png)
 
+## Process Results
+
+![](./img/results.png)
 
 # Bibliography
