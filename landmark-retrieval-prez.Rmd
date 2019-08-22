@@ -4,9 +4,11 @@ author: "Matt Emery"
 date: "08/08/2019"
 output: 
   revealjs::revealjs_presentation:
+    self_contained: true
     theme: "night"
     highlight: "zenburn"
     css: style.css
+bibliography: bibliography.bib
 ---
 
 ```{r setup, include=FALSE}
@@ -123,9 +125,8 @@ $$GAP = \frac{1}{M}\sum_{i=1}^N P(i) rel(i)$$
 ## Data Cleaning - Images
 
 <div id="left">
- - Of the images that remain, find the "most agreeable" image (most other images with 0.5 cosine similarity) in each class
+ - Of the images that remain, find the "most agreeable" image  in each class
  - Only include that image and the images that agree with it
- 
  - **Before Data Cleaning:** 4,132,914 Images, 203,094 Classes
  - **After Data Cleaning:** 836,964 Images, 112,782 Classes
 </div>
@@ -134,7 +135,10 @@ $$GAP = \frac{1}{M}\sum_{i=1}^N P(i) rel(i)$$
 ![](./img/centrality-sample.png)
 </div>
 
-## How Do We Find the Distance between Images?
+<aside class="notes">
+(most other images with 0.5 cosine similarity)
+How Do We Find the Distance between Images?
+</aside>
 
 ## GeM Pooling Layers
 
@@ -230,7 +234,7 @@ Team JL used seven models as backbones and ensembled them
  4. SE-ResNeXt-101
  5. SENet-154
  6. Deep Image Retrieval (DIR)
- 7. Previous 6 + Attentuated Unsupervised Whitening (AUW)
+ 7. Previous 6 + Attenuated Unsupervised Whitening (AUW)
 </div>
 
 <div id="right">
@@ -260,24 +264,19 @@ Team JL used seven models as backbones and ensembled them
  
  $$\left(I_{q}, I_{p}, I_{n, 1}, \dots, I_{n, 5}\right)$$
 
-## Contrastive loss
-
- - Transform the tuple containing the query image and the positive and negative examples into a list of 2-tuples
+## Contrastive Loss
+ - Pair the query image with each other image in the tuple
  - If the images are in the same class, the loss the half the norm of the difference of two descriptors
  - Otherwise, subtract the difference of the two descriptors from a margin hyperparameter
  
- $$\left(I_{q}, I_{p}\right),\left(I_{q}, I_{n, 1}\right), \ldots,\left(I_{q}, I_{n, 5}\right)$$
+![https://github.com/filipradenovic/cnnimageretrieval-pytorch](./img/contrastive_loss.png)
 
 $$\mathcal{L}(i, j)=\left\{\begin{array}{ll}{\frac{1}{2}\|\overline{\mathbf{f}}(i)-\overline{\mathbf{f}}(j)\|^{2},} & {\text { if } Y(i, j)=1} \\ {\frac{1}{2}(\max \{0, \tau-\|\overline{\mathbf{f}}(i)-\overline{\mathbf{f}}(j)\|\})^{2},} & {\text { if } Y(i, j)=0}\end{array}\right.$$
-
-![https://github.com/filipradenovic/cnnimageretrieval-pytorch](./img/contrastive_loss.png)
 
 ## Triplet loss
 
  - 3-tuples instead of 2-tuples
  - Suggested to be a smoother function
-
-$$\left(I_{q}, I_{p}, I_{n, 1}\right), \ldots,\left(I_{q}, I_{p}, I_{n, 5}\right)$$
 
 $$\mathcal{L}(i)=\sum_{i=1}^{N}\left[\left\|f_{i}^{q}-f_{i}^{p}\right\|^{2}-\left\|f_{i}^{q}-f_{i}^{n}\right\|^{2}+\alpha\right]_{+}$$
 
@@ -365,7 +364,7 @@ https://github.com/harveyslash/Facial-Similarity-with-Siamese-Networks-in-Pytorc
 
 <div id="left">
  - Combines DELF with Aggregated Selective Match Kernels
- - Network simulatenously proposes regions of interest and salient image features
+ - Network simultaneously proposes regions of interest and salient image features
  - A Faster-RCNN backbone is used for region proposal
 </div>
 
@@ -377,7 +376,7 @@ https://github.com/harveyslash/Facial-Similarity-with-Siamese-Networks-in-Pytorc
 
 <div id="left">
  - Using only the global model, compute the similarity between ALL test and train images
- - Keep the top 10 closet neighbours for each test image
+ - Keep the top 10 closet neighbors for each test image
  - A soft voting scheme of the top 5 images determines the class
 </div>
 
@@ -398,16 +397,13 @@ https://github.com/harveyslash/Facial-Similarity-with-Siamese-Networks-in-Pytorc
 </div> 
 
 ## Step 3: Re-Ranking (Team JL's Secret Sauce)
-<div id="left">
+
  - Compare the Rank-1 image with the the top 20000 predictions using the D2R
  - Append any highly similar images to right behind rank-1, with slightly less confidence than the rank-1 image but more than rank-2
  - Do this the previous Rank-2 image as well
-</div>
 
 
-<div id="right">
 ![](./img/reranking.png)
-</div>
 
 <aside class="notes">
 - All this work and they haven't dealt with distractors!
@@ -420,9 +416,8 @@ https://github.com/harveyslash/Facial-Similarity-with-Siamese-Networks-in-Pytorc
  - The distractors are diluting their score by being middle-ranked
 
 
-<div id="right">
 ![](./img/step3.png)
-</div>
+
 
 ## Backbone Results
 
@@ -432,8 +427,6 @@ https://github.com/harveyslash/Facial-Similarity-with-Siamese-Networks-in-Pytorc
 
 ![](./img/results.png)
 
-## Overview Again
+## Done
 
 ![](./img/overview.png)
-
-# Bibliography
