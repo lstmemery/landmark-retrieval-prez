@@ -282,6 +282,8 @@ $$\mathcal{L}(i)=\sum_{i=1}^{N}\left[\left\|f_{i}^{q}-f_{i}^{p}\right\|^{2}-\lef
 
  - Triplet loss is very similar to contrastive loss. I don't know why the JL decided to use both losses
 
+![https://towardsdatascience.com/lossless-triplet-loss-7e932f990b24](./img/triplet_loss.png)
+
 ## What does a Siamese network look like?
 
 ![https://hackernoon.com/one-shot-learning-with-siamese-networks-in-pytorch-8ddaab10340e](./img/siamese-networks.jpeg)
@@ -309,7 +311,7 @@ class SiameseNetwork(nn.Module):
 
 ```
 
-## Contrastive Loss
+## Contrastive Loss Code
 
 ```python
 class ContrastiveLoss(torch.nn.Module):
@@ -327,56 +329,96 @@ class ContrastiveLoss(torch.nn.Module):
         return loss_contrastive
 ```
 
-
+<aside class="notes">
 https://github.com/harveyslash/Facial-Similarity-with-Siamese-Networks-in-Pytorch/blob/master/Siamese-networks-medium.ipynb
+</aside>
 
 
 ## Local CNN Model
 
+<div id="left">
  - Local descriptors describe a small patch of an image with fine detail
  - After a first pass with the "global" network, a local network attempts to re-rank the top 10 candidates
  - Uses a Detect-to-Retrieve (D2R) network, building on a Deep Local Features architecture (DELF)
+</div>
 
+<div id="right">
+![](./img/d2e-boundingboxes.png)
+</div>
 
 ## Deep Local Features
 
+<div id="left">
  - DELF uses attention in a similar way to the global model
  - DELF learns keypoints that are relevant only to the class of object
  - These keypoints tend to be invariant to pose and viewpoint
- 
+</div>
+
+<div id="right">
  ![](./img/delf_query.png)
+</div>
  
 ## Detect-to-Retrieve
 
+<div id="left">
  - Combines DELF with Aggregated Selective Match Kernels
  - Network simulatenously proposes regions of interest and salient image features
  - A Faster-RCNN backbone is used for region proposal
+</div>
 
-![](./img/d2r.png)
-
+<div id="right">
+![https://arxiv.org/pdf/1812.01584v2.pdf](./img/d2r.png)
+</div>
 
 ## At Test time: Step 1 Global Search
 
+<div id="left">
  - Using only the global model, compute the similarity between ALL test and train images
  - Keep the top 10 closet neighbours for each test image
  - A soft voting scheme of the top 5 images determines the class
+</div>
+
+<div id="right">
+![](./img/step1.png)
+</div>
+
 
 ## Step 2: Local Search
-
+<div id="left">
  - Run the D2R algorithm on the previous identified top 10 candidates
  - Vote based on this
- 
+</div>
+
+
+<div id="right">
+![](./img/step1.png)
+</div> 
+
 ## Step 3: Re-Ranking (Team JL's Secret Sauce)
+<div id="left">
  - All this work and they haven't dealt with distractors!
  - Compare the Rank-1 image with the the top 20000 predictions using the D2R descriptors
  - Append any highly similar images to right behind rank-1, with slightly less confidence than the rank-1 image but more than rank-2
  - Do this the previous Rank-2 image as well
- 
+</div>
+
+
+<div id="right">
+![](./img/step1.png)
+</div>
+
 ## Why would re-ranking work
+<div id="left">
  - They believe that they're rank-1 image was very often right
  - They also believe that they were getting most of images in the proper class within the first 20000 photos
  - The distractors are diluting their score by being middle-ranked
- 
+</div>
+
+
+<div id="right">
+![](./img/step1.png)
+</div>
+
 ## Backbone Results
 
 ![](./img/backbone_results.png)
