@@ -2,7 +2,10 @@
 title: "Landmark Retrieval Kaggle"
 author: "Matt Emery"
 date: "08/08/2019"
-output: revealjs::revealjs_presentation
+output: 
+  revealjs::revealjs_presentation:
+    theme: "night"
+    css: style.css
 ---
 
 ```{r setup, include=FALSE}
@@ -12,33 +15,19 @@ knitr::opts_chunk$set(echo = FALSE)
 ## Competitions
 
 <div id="left">
- - Google Landmark Retrieval 2019
- - Google Landmark Recognition 2019
+ - Google Landmark Retrieval 2019: Given an image, can you find all of the same landmarks in a dataset?
+ - Google Landmark Recognition 2019: Label famous (and not-so-famous) landmarks in images
 </div>
 
 <div id="right">
- ![](./img/nighttime.jpg)
+ ![](./img/karnak.jpg)
 </div>
 
 ## Overview
 
- - You will roughly understand what's going here:
-
 ![](./img/overview.png)
 
-
-## Data
-
- - Images in Training: 4,132,914 (0.5 TB)
- - 203,094 Classes (Landmarks)
- - 117,577 test images
- 
-Not very well curated
-
-There are also distractor images (photos of nothing)
-
-
-## What are Neural Nets? (Please, No Math)
+## What are Neural Nets?
 
 <div id="left">
   - They are large arrays of numbers that get multiplied by one another
@@ -66,6 +55,25 @@ There are also distractor images (photos of nothing)
 </div>
 <aside class="notes">Other applications: Natural language processing, Video</aside>
 
+## First Layer Activations
+
+![http://cs231n.github.io/understanding-cnn/](./img/1st-layer.jpeg)
+
+## Data
+
+<div id="left">
+ - Images in Training: 4,132,914 (0.5 TB)
+ - **203,094 Landmarks**
+ - 117,577 test images
+ - Not very well curated
+ - There are also distractor images (photos of nothing)
+</div>
+
+<div id="right">
+![](./img/trevi.jpg)
+</div>
+
+
 ## Some images are distractors
 
 ![](./img/goat.jpg)
@@ -84,16 +92,12 @@ There are also distractor images (photos of nothing)
 
 ![](./img/wrong-direction.jpg)
 
-## Retrieval Evaluation
+## Evaluation
 
- - Mean Average Precision at 100 
- - The model gets 100 chances to retrieval the proper class
- - Reward is $\frac{1}{k}$ where $k$ is the rank of the correct class
- - Take the average of all queries
 
-## Recognition Evaluation
-
- - Google Landmark Recognition: Global Average Precision
+<div id="left">
+ - Landmark Recognition: Global Average Precision
+ - Landmark Retrieval: Mean Average Precision at 100 
 
 $$GAP = \frac{1}{M}\sum_{i=1}^N P(i) rel(i)$$
  - $M$ is number of query images with landmarks
@@ -101,28 +105,25 @@ $$GAP = \frac{1}{M}\sum_{i=1}^N P(i) rel(i)$$
  - $P(i)$ Precision at rank $i$
  - $rel(i)$ an indicator function if the prediction is correct
 
-<!-- How is relevance defined? -->
+</div>
 
-
-
-## Competition Info
-
- - Reward: $25000 for each competition
- - 
+<div id="right">
+![https://es.slideshare.net/JosRamnRosViqueira/information-retrieval-evaluation-64158263](./img/mean_average_precision.jpg)
+</div>
 
 ## First Place Solution
 
  - Yinzheng Gu and Chuanpeng Li of the Video++ AI Lab
 
-### Data Cleaning - Classes
+## Data Cleaning - Classes
 
  - Just remove the very imbalanced classes (less than 4 examples)
- - Use the model from last year as a feature "descriptors"
+ - Use the model from last year extract image descriptors
  - A descriptor is a vector represented by a generalized-mean pooling layer (see next slide)
  - Within each class, compare the cosine similarity of each pair
  - Classes with no pairs that agree (cosine similarity > 0.5) are removed
 
-### GeM Pooling Layers
+## GeM Pooling Layers
 
  - First Proposed in 2017
 
@@ -130,9 +131,9 @@ $$\mathbf{f}^{(g)}=\left[\mathrm{f}_{1}^{(g)} \ldots \mathrm{f}_{k}^{(g)} \ldots
  Where $\mathcal{X}_{k}$ is the $k$th kernel of the 3D Image tensor and $p_k$ is the pooling parameter, which can be learned. 
  $p_k = 1$ is global average pooling and $p_k -> \infty$ is global max pooling.
  
----
+<aside class="notes">
 Notes: https://github.com/filipradenovic/cnnimageretrieval-pytorch
-
+</aside>
 ## What does this mean?
 
 ![GeM Descriptors](img/gem_descriptors.png)
@@ -162,6 +163,7 @@ Notes: https://github.com/filipradenovic/cnnimageretrieval-pytorch
  - Predict ranking loss
 
 ## Global CNN Model Backbones
+
  - In the original paper, a ResNet is used as a descriptor extractor
  - Team JL used seven models as backbones and ensembled them
  1. ResNet-101
@@ -171,16 +173,18 @@ Notes: https://github.com/filipradenovic/cnnimageretrieval-pytorch
  5. SENet-154
  6. Deep Image Retrieval (DIR)
  7. Previous 6 + Attentuated Unsupervised Whitening (AUW)
+ 
+<aside class="notes">
+ AUW is like PCA for descriptors
+</aside>
 
-## Attentuated Unsupervised Whitening
-
- - Similar to PCA 
- - 
-
-### Auxilery Classification Loss
+## Auxiliary Classification Loss
 
  - Only applies to the 1st global descriptor
- - Just a batch norm and temperature scaled softmax <!-- Follow up on this -->
+ - Apply batchnorm and then a temperature-scaled softmax (for smoothing) 
+ - Useful in semi-supervised or weakly supervised situations
+ 
+![https://raw.githubusercontent.com/naver/cgd/master/figures/architecture.png](img/architecture.png)
 
 ## Attentional Mapping
 
